@@ -1,0 +1,167 @@
+// Deal/Sales Pipeline Operations
+// import { db } from '../db'
+// import disabled during development
+
+export interface CreateDealInput {
+  name: string
+  amount?: number
+  stage?: DealStage
+  probability?: number
+  expectedCloseDate?: Date
+  leadId: string
+  userId: string
+}
+
+export interface UpdateDealInput {
+  name?: string
+  amount?: number
+  stage?: DealStage
+  probability?: number
+  expectedCloseDate?: Date
+  actualCloseDate?: Date
+}
+
+export class DealService {
+  // Create a new deal
+  static async create(input: CreateDealInput) {
+    try {
+      const deal = await db.deal.create({
+        data: input,
+        include: {
+          lead: true,
+        },
+      })
+      return { success: true, data: deal }
+    } catch (error) {
+      console.error('Error creating deal:', error)
+      return { success: false, error: 'Failed to create deal' }
+    }
+  }
+
+  // Get all deals with filtering
+  static async getAll(filters?: {
+    stage?: DealStage
+    minProbability?: number
+    maxProbability?: number
+    userId?: string
+    search?: string
+  }) {
+    try {
+      const {
+        stage,
+        minProbability,
+        maxProbability,
+        userId,
+        search,
+      } = filters || {}
+
+      const where: any = {}
+      if (stage) where.stage = stage
+      if (minProbability !== undefined || maxProbability !== undefined) {
+        where.probability = {}
+        if (minProbability !== undefined) where.probability.gte = minProbability
+        if (maxProbability !== undefined) where.probability.lte = maxProbability
+      }
+      if (userId) where.userId = userId
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { lead: { company: { contains: search, mode: 'insensitive' } } },
+        ]
+      }
+
+      const deals = await db.deal.findMany({
+        where,
+        include: {
+          lead: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      return { success: true, data: deals }
+    } catch (error) {
+      console.error('Error fetching deals:', error)
+      return { success: false, error: 'Failed to fetch deals' }
+    }
+  }
+
+  // Update deal
+  static async update(id: string, input: UpdateDealInput) {
+    try {
+      const deal = await db.deal.update({
+        where: { id },
+        data: input,
+        include: {
+          lead: true,
+        },
+      })
+      return { success: true, data: deal }
+    } catch (error) {
+      console.error('Error updating deal:', error)
+      return { success: false, error: 'Failed to update deal' }
+    }
+  }
+
+  // Delete deal
+  static async delete(id: string) {
+    try {
+      await db.deal.delete({
+        where: { id },
+      })
+      return { success: true, message: 'Deal deleted successfully' }
+    } catch (error) {
+      console.error('Error deleting deal:', error)
+      return { success: false, error: 'Failed to delete deal' }
+    }
+  }
+
+  // Get pipeline statistics
+  static async getPipelineStats(userId?: string) {
+    try {
+      const where = userId ? { userId } : {}
+
+      const deals = await db.deal.findMany({
+        where,
+        include: {
+          lead: true,
+        },
+      })
+
+      const pipeline = deals.reduce((acc, deal) => {
+        if (!acc[deal.stage]) {
+          acc[deal.stage] = {
+            stage: deal.stage,
+            count: 0,
+            totalValue: 0,
+            deals: [],
+          }
+        }
+        acc[deal.stage].count += 1
+        acc[deal.stage].totalValue += deal.amount || 0
+        acc[deal.stage].deals.push(deal)
+        return acc
+      }, {} as any)
+
+      const stages = Object.values(pipeline)
+
+      const totalValue = deals.reduce((sum, deal) => sum + (deal.amount || 0), 0)
+      const weightedValue = deals.reduce(
+        (sum, deal) => sum + ((deal.amount || 0) * deal.probability) / 100,
+        0
+      )
+
+      return {
+        success: true,
+        data: {
+          stages,
+          totalValue,
+          weightedValue,
+          totalDeals: deals.length,
+        },
+      }
+    } catch (error) {
+      console.error('Error fetching pipeline stats:', error)
+      return { success: false, error: 'Failed to fetch pipeline stats' }
+    }
+  }
+}

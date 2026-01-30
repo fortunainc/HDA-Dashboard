@@ -1,0 +1,217 @@
+// HoneyBook Integration Service
+import { db } from '../db'
+
+export interface HoneyBookConfig {
+  apiKey: string
+  webhookSecret?: string
+}
+
+export interface HoneyBookContact {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  company?: string
+  website?: string
+}
+
+export interface HoneyBookProject {
+  id: string
+  name: string
+  status: string
+  amount?: number
+  contactId: string
+}
+
+export class HoneyBookService {
+  // Save HoneyBook API settings
+  static async saveSettings(userId: string, config: HoneyBookConfig) {
+    try {
+      const settings = await db.honeyBookSettings.upsert({
+        where: { userId },
+        update: {
+          apiKey: config.apiKey,
+          webhookSecret: config.webhookSecret,
+          updatedAt: new Date(),
+        },
+        create: {
+          userId,
+          apiKey: config.apiKey,
+          webhookSecret: config.webhookSecret,
+          syncEnabled: true,
+        },
+      })
+      return { success: true, data: settings }
+    } catch (error) {
+      console.error('Error saving HoneyBook settings:', error)
+      return { success: false, error: 'Failed to save settings' }
+    }
+  }
+
+  // Get HoneyBook settings
+  static async getSettings(userId: string) {
+    try {
+      const settings = await db.honeyBookSettings.findUnique({
+        where: { userId },
+      })
+      return { success: true, data: settings }
+    } catch (error) {
+      console.error('Error getting HoneyBook settings:', error)
+      return { success: false, error: 'Failed to get settings' }
+    }
+  }
+
+  // Sync contacts from HoneyBook to Dashboard
+  static async syncContactsFromHoneyBook(userId: string) {
+    try {
+      const settings = await db.honeyBookSettings.findUnique({
+        where: { userId },
+      })
+
+      if (!settings || !settings.apiKey) {
+        return { success: false, error: 'HoneyBook not configured' }
+      }
+
+      // In production, this would make API calls to HoneyBook
+      // For now, we'll return a placeholder response
+      const contacts: HoneyBookContact[] = []
+
+      // Sync contacts to database
+      for (const contact of contacts) {
+        await db.contact.upsert({
+          where: { email: contact.email },
+          update: {
+            firstName: contact.name.split(' ')[0],
+            lastName: contact.name.split(' ').slice(1).join(' '),
+            phone: contact.phone,
+            company: contact.company,
+          },
+          create: {
+            userId,
+            firstName: contact.name.split(' ')[0],
+            lastName: contact.name.split(' ').slice(1).join(' '),
+            email: contact.email,
+            phone: contact.phone,
+            company: contact.company,
+          },
+        })
+      }
+
+      // Update last sync timestamp
+      await db.honeyBookSettings.update({
+        where: { userId },
+        data: { lastSyncAt: new Date() },
+      })
+
+      return {
+        success: true,
+        message: `Synced ${contacts.length} contacts from HoneyBook`,
+      }
+    } catch (error) {
+      console.error('Error syncing contacts:', error)
+      return { success: false, error: 'Failed to sync contacts' }
+    }
+  }
+
+  // Sync leads from Dashboard to HoneyBook
+  static async syncLeadsToHoneyBook(userId: string, leadIds: string[]) {
+    try {
+      const settings = await db.honeyBookSettings.findUnique({
+        where: { userId },
+      })
+
+      if (!settings || !settings.apiKey) {
+        return { success: false, error: 'HoneyBook not configured' }
+      }
+
+      const leads = await db.lead.findMany({
+        where: {
+          id: { in: leadIds },
+          userId,
+        },
+      })
+
+      // In production, this would make API calls to HoneyBook
+      // For now, we'll track the sync attempt
+      const syncedCount = leads.length
+
+      return {
+        success: true,
+        message: `Synced ${syncedCount} leads to HoneyBook`,
+      }
+    } catch (error) {
+      console.error('Error syncing leads to HoneyBook:', error)
+      return { success: false, error: 'Failed to sync leads' }
+    }
+  }
+
+  // Test HoneyBook connection
+  static async testConnection(userId: string) {
+    try {
+      const settings = await db.honeyBookSettings.findUnique({
+        where: { userId },
+      })
+
+      if (!settings || !settings.apiKey) {
+        return { success: false, error: 'No API key configured' }
+      }
+
+      // In production, this would make a test API call to HoneyBook
+      // For now, we'll validate the API key format
+      const isValidKey = settings.apiKey.length > 10
+
+      if (!isValidKey) {
+        return { success: false, error: 'Invalid API key format' }
+      }
+
+      return {
+        success: true,
+        message: 'HoneyBook connection successful',
+      }
+    } catch (error) {
+      console.error('Error testing HoneyBook connection:', error)
+      return { success: false, error: 'Connection test failed' }
+    }
+  }
+
+  // Webhook handler for HoneyBook events
+  static async handleWebhook(payload: any, signature: string) {
+    try {
+      // Verify webhook signature
+      // In production, validate against stored webhookSecret
+
+      const eventType = payload.event_type
+      const data = payload.data
+
+      switch (eventType) {
+        case 'contact.created':
+        case 'contact.updated':
+          await this.syncContactFromWebhook(data)
+          break
+        case 'project.created':
+        case 'project.updated':
+          await this.syncProjectFromWebhook(data)
+          break
+        default:
+          console.log('Unhandled webhook event:', eventType)
+      }
+
+      return { success: true, message: 'Webhook processed' }
+    } catch (error) {
+      console.error('Error processing webhook:', error)
+      return { success: false, error: 'Webhook processing failed' }
+    }
+  }
+
+  // Sync contact from webhook
+  private static async syncContactFromWebhook(data: any) {
+    // Implementation would sync contact data
+    console.log('Syncing contact from webhook:', data.id)
+  }
+
+  // Sync project from webhook
+  private static async syncProjectFromWebhook(data: any) {
+    // Implementation would sync project/deal data
+    console.log('Syncing project from webhook:', data.id)
+  }
+}

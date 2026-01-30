@@ -1,0 +1,155 @@
+// Campaign Management Operations
+// // import { db } from '../db'
+// // import disabled during development
+
+export interface CreateCampaignInput {
+  name: string
+  type: string
+  status?: string
+  description?: string
+  startDate?: Date
+  endDate?: Date
+  budget?: number
+  userId: string
+}
+
+export class CampaignService {
+  // Create a new campaign
+  static async create(input: CreateCampaignInput) {
+    try {
+      const campaign = await db.campaign.create({
+        data: input,
+      })
+      return { success: true, data: campaign }
+    } catch (error) {
+      console.error('Error creating campaign:', error)
+      return { success: false, error: 'Failed to create campaign' }
+    }
+  }
+
+  // Get all campaigns
+  static async getAll(filters?: {
+    type?: CampaignType
+    status?: CampaignStatus
+    userId?: string
+  }) {
+    try {
+      const { type, status, userId } = filters || {}
+
+      const where: any = {}
+      if (type) where.type = type
+      if (status) where.status = status
+      if (userId) where.userId = userId
+
+      const campaigns = await db.campaign.findMany({
+        where,
+        include: {
+          leads: true,
+          emails: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      return { success: true, data: campaigns }
+    } catch (error) {
+      console.error('Error fetching campaigns:', error)
+      return { success: false, error: 'Failed to fetch campaigns' }
+    }
+  }
+
+  // Add leads to campaign
+  static async addLeads(campaignId: string, leadIds: string[]) {
+    try {
+      const campaignLeads = leadIds.map(leadId => ({
+        campaignId,
+        leadId,
+      }))
+
+      await db.campaignLead.createMany({
+        data: campaignLeads,
+        skipDuplicates: true,
+      })
+
+      // Update campaign sent count
+      await db.campaign.update({
+        where: { id: campaignId },
+        data: {
+          sentCount: { increment: leadIds.length },
+        },
+      })
+
+      return { success: true, message: `Added ${leadIds.length} leads to campaign` }
+    } catch (error) {
+      console.error('Error adding leads to campaign:', error)
+      return { success: false, error: 'Failed to add leads' }
+    }
+  }
+
+  // Update campaign metrics
+  static async updateMetrics(campaignId: string, metrics: {
+    opened?: number
+    clicked?: number
+    replied?: number
+    converted?: number
+  }) {
+    try {
+      await db.campaign.update({
+        where: { id: campaignId },
+        data: {
+          ...(metrics.opened && { openedCount: { increment: metrics.opened } }),
+          ...(metrics.clicked && { clickedCount: { increment: metrics.clicked } }),
+          ...(metrics.replied && { repliedCount: { increment: metrics.replied } }),
+          ...(metrics.converted && { convertedCount: { increment: metrics.converted } }),
+        },
+      })
+
+      return { success: true, message: 'Metrics updated' }
+    } catch (error) {
+      console.error('Error updating metrics:', error)
+      return { success: false, error: 'Failed to update metrics' }
+    }
+  }
+
+  // Get campaign performance
+  static async getPerformance(campaignId: string) {
+    try {
+      const campaign = await db.campaign.findUnique({
+        where: { id: campaignId },
+        include: {
+          leads: true,
+        },
+      })
+
+      if (!campaign) {
+        return { success: false, error: 'Campaign not found' }
+      }
+
+      const metrics = {
+        sent: campaign.sentCount,
+        opened: campaign.openedCount,
+        clicked: campaign.clickedCount,
+        replied: campaign.repliedCount,
+        converted: campaign.convertedCount,
+      }
+
+      const rates = {
+        openRate: metrics.sent > 0 ? (metrics.opened / metrics.sent) * 100 : 0,
+        clickRate: metrics.opened > 0 ? (metrics.clicked / metrics.opened) * 100 : 0,
+        replyRate: metrics.sent > 0 ? (metrics.replied / metrics.sent) * 100 : 0,
+        conversionRate: metrics.replied > 0 ? (metrics.converted / metrics.replied) * 100 : 0,
+      }
+
+      return {
+        success: true,
+        data: {
+          campaign,
+          metrics,
+          rates,
+        },
+      }
+    } catch (error) {
+      console.error('Error fetching campaign performance:', error)
+      return { success: false, error: 'Failed to fetch performance' }
+    }
+  }
+}

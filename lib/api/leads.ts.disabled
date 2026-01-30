@@ -1,0 +1,262 @@
+// Lead CRUD Operations
+// import { db } from '../db'
+// import disabled during development
+
+export interface CreateLeadInput {
+  firstName: string
+  lastName?: string
+  email: string
+  phone?: string
+  company?: string
+  title?: string
+  industry?: string
+  website?: string
+  linkedinUrl?: string
+  status?: LeadStatus
+  source?: string
+  score?: number
+  notes?: string
+  userId: string
+}
+
+export interface UpdateLeadInput {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  company?: string
+  title?: string
+  industry?: string
+  website?: string
+  linkedinUrl?: string
+  status?: LeadStatus
+  source?: string
+  score?: number
+  notes?: string
+  employeeCount?: number
+  revenue?: number
+  foundedYear?: number
+  technologies?: string[]
+  fundingStage?: string
+}
+
+export class LeadService {
+  // Create a new lead
+  static async create(input: CreateLeadInput) {
+    try {
+      const lead = await db.lead.create({
+        data: input,
+        include: {
+          contacts: true,
+          deals: true,
+          activities: true,
+        },
+      })
+      return { success: true, data: lead }
+    } catch (error) {
+      console.error('Error creating lead:', error)
+      return { success: false, error: 'Failed to create lead' }
+    }
+  }
+
+  // Get all leads with filtering and pagination
+  static async getAll(filters?: {
+    status?: LeadStatus
+    industry?: string
+    minScore?: number
+    maxScore?: number
+    search?: string
+    page?: number
+    limit?: number
+  }) {
+    try {
+      const {
+        status,
+        industry,
+        minScore,
+        maxScore,
+        search,
+        page = 1,
+        limit = 50,
+      } = filters || {}
+
+      const where: any = {}
+
+      if (status) where.status = status
+      if (industry) where.industry = industry
+      if (minScore !== undefined || maxScore !== undefined) {
+        where.score = {}
+        if (minScore !== undefined) where.score.gte = minScore
+        if (maxScore !== undefined) where.score.lte = maxScore
+      }
+      if (search) {
+        where.OR = [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { company: { contains: search, mode: 'insensitive' } },
+        ]
+      }
+
+      const [leads, total] = await Promise.all([
+        db.lead.findMany({
+          where,
+          include: {
+            contacts: true,
+            deals: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        db.lead.count({ where }),
+      ])
+
+      return {
+        success: true,
+        data: leads,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      }
+    } catch (error) {
+      console.error('Error fetching leads:', error)
+      return { success: false, error: 'Failed to fetch leads' }
+    }
+  }
+
+  // Get lead by ID
+  static async getById(id: string) {
+    try {
+      const lead = await db.lead.findUnique({
+        where: { id },
+        include: {
+          contacts: true,
+          deals: true,
+          activities: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      })
+      
+      if (!lead) {
+        return { success: false, error: 'Lead not found' }
+      }
+      
+      return { success: true, data: lead }
+    } catch (error) {
+      console.error('Error fetching lead:', error)
+      return { success: false, error: 'Failed to fetch lead' }
+    }
+  }
+
+  // Update lead
+  static async update(id: string, input: UpdateLeadInput) {
+    try {
+      const lead = await db.lead.update({
+        where: { id },
+        data: input,
+        include: {
+          contacts: true,
+          deals: true,
+        },
+      })
+      return { success: true, data: lead }
+    } catch (error) {
+      console.error('Error updating lead:', error)
+      return { success: false, error: 'Failed to update lead' }
+    }
+  }
+
+  // Delete lead
+  static async delete(id: string) {
+    try {
+      await db.lead.delete({
+        where: { id },
+      })
+      return { success: true, message: 'Lead deleted successfully' }
+    } catch (error) {
+      console.error('Error deleting lead:', error)
+      return { success: false, error: 'Failed to delete lead' }
+    }
+  }
+
+  // Get lead statistics
+  static async getStatistics(userId?: string) {
+    try {
+      const where = userId ? { userId } : {}
+
+      const [
+        totalLeads,
+        statusBreakdown,
+        industryBreakdown,
+        avgScore,
+        recentActivity,
+      ] = await Promise.all([
+        db.lead.count({ where }),
+        db.lead.groupBy({
+          by: ['status'],
+          where,
+          _count: true,
+        }),
+        db.lead.groupBy({
+          by: ['industry'],
+          where,
+          _count: true,
+        }),
+        db.lead.aggregate({
+          where,
+          _avg: { score: true },
+        }),
+        db.activity.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          include: { lead: true },
+        }),
+      ])
+
+      return {
+        success: true,
+        data: {
+          totalLeads,
+          statusBreakdown: statusBreakdown.map(item => ({
+            status: item.status,
+            count: item._count,
+          })),
+          industryBreakdown: industryBreakdown.map(item => ({
+            industry: item.industry || 'Unknown',
+            count: item._count,
+          })),
+          avgScore: avgScore._avg.score || 0,
+          recentActivity,
+        },
+      }
+    } catch (error) {
+      console.error('Error fetching lead statistics:', error)
+      return { success: false, error: 'Failed to fetch statistics' }
+    }
+  }
+
+  // Batch import leads
+  static async bulkImport(leads: CreateLeadInput[]) {
+    try {
+      const result = await db.lead.createMany({
+        data: leads,
+        skipDuplicates: true,
+      })
+      
+      return {
+        success: true,
+        message: `Successfully imported ${result.count} leads`,
+        count: result.count,
+      }
+    } catch (error) {
+      console.error('Error bulk importing leads:', error)
+      return { success: false, error: 'Failed to import leads' }
+    }
+  }
+}

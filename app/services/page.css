@@ -1,0 +1,192 @@
+.services-hero {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.service-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.service-category {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #667eea;
+  margin-bottom: 10px;
+}
+
+.service-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 15px;
+}
+
+.service-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 20px;
+}
+
+.service-description {
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.service-features {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.service-features li {
+  padding: 8px 0;
+  padding-left: 25px;
+  position: relative;
+  color: #4b5563;
+}
+
+.service-features li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #059669;
+  font-weight: bold;
+}
+
+.service-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.badge-digital {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-pr {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-package {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.section-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.section-subtitle {
+  font-size: 18px;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.cta-section {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  padding: 60px 20px;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.cta-button {
+  background: white;
+  color: #059669;
+  padding: 15px 40px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 20px;
+  transition: background 0.3s ease;
+}
+
+.cta-button:hover {
+  background: #f0fdf4;
+}
+
+.pricing-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.pricing-table th,
+.pricing-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pricing-table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.pricing-table tr:hover {
+  background: #f9fafb;
+}
+
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  padding: 10px 25px;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-button.active,
+.filter-button:hover {
+  background: #667eea;
+  color: white;
+}

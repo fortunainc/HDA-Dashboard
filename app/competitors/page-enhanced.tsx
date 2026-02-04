@@ -41,6 +41,7 @@ interface Competitor {
   }[]
   lastAnalyzedAt: Date
   monitoringEnabled: boolean
+  analyzed: boolean
   techStack?: {
     cms: string
     analytics: string
@@ -254,6 +255,7 @@ export default function CompetitorsPageEnhanced() {
         'Regulatory changes'
       ],
       lastAnalyzedAt: new Date(),
+      analyzed: true,
     }
     
     setCompetitors(competitors.map(c => 
@@ -435,14 +437,24 @@ export default function CompetitorsPageEnhanced() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => handleAnalyzeCompetitor(competitor.id)}
-                    disabled={analyzingId === competitor.id}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Target className="w-4 h-4" />
-                    {analyzingId === competitor.id ? 'Analyzing...' : 'Analyze'}
-                  </button>
+                  {competitor.analyzed ? (
+                    <button
+                      disabled
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg opacity-75 cursor-not-allowed"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Analysis Complete
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAnalyzeCompetitor(competitor.id)}
+                      disabled={analyzingId === competitor.id}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Target className="w-4 h-4" />
+                      {analyzingId === competitor.id ? 'Analyzing...' : 'Analyze'}
+                    </button>
+                  )}
                   <button
                     onClick={() => generateLeadsFromCompetitor(competitor)}
                     className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -655,12 +667,12 @@ export default function CompetitorsPageEnhanced() {
                 </div>
               )}
 
-              {/* Upsell Opportunities */}
+              {/* HDA Service Recommendations */}
               {competitor.upsellOpportunities && competitor.upsellOpportunities.length > 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <h5 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    Upsell Opportunities
+                    HDA Service Recommendations
                   </h5>
                   <div className="space-y-3">
                     {competitor.upsellOpportunities.map((upsell, idx) => (

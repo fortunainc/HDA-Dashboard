@@ -302,7 +302,7 @@ export default function CompetitorsPageEnhanced() {
     console.log(`Exported ${competitor.name} leads to ${platform}`)
   }
 
-  const generateCSVContent = (competitor: Competitor): string => {
+  const generateCSVContent = (): string => {
     const headers = ['Name', 'Title', 'Company', 'Email', 'Phone', 'LinkedIn', 'Priority', 'Source']
     const rows = generatedLeads.map(lead => [
       lead.name,
@@ -862,25 +862,7 @@ export default function CompetitorsPageEnhanced() {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => {
-                    const csvContent = generateCSVContent({
-                      id: 'export-' + Date.now(),
-                      name: 'Export',
-                      website: '',
-                      industry: '',
-                      description: '',
-                      monthlyVisitors: 0,
-                      seoScore: 0,
-                      socialScore: 0,
-                      domainAge: 0,
-                      domainAuthority: 0,
-                      organicKeywords: 0,
-                      backlinks: 0,
-                      topKeywords: [],
-                      strengths: [],
-                      weaknesses: [],
-                      opportunities: [],
-                      revenue: '$0M',
-                      employees: 0,
+                    const csvContent = generateCSVContent()
                       threats: [],
                       lastAnalyzedAt: new Date(),
                       monitoringEnabled: true

@@ -863,10 +863,6 @@ export default function CompetitorsPageEnhanced() {
                 <button
                   onClick={() => {
                     const csvContent = generateCSVContent()
-                      threats: [],
-                      lastAnalyzedAt: new Date(),
-                      monitoringEnabled: true
-                    })
                     downloadCSV(csvContent, 'generated_leads.csv')
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"

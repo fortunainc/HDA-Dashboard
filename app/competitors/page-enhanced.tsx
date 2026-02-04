@@ -863,6 +863,7 @@ export default function CompetitorsPageEnhanced() {
                 <button
                   onClick={() => {
                     const csvContent = generateCSVContent({
+                      id: 'export-' + Date.now(),
                       name: 'Export',
                       website: '',
                       industry: '',
@@ -878,6 +879,8 @@ export default function CompetitorsPageEnhanced() {
                       strengths: [],
                       weaknesses: [],
                       opportunities: [],
+                      revenue: '$0M',
+                      employees: 0,
                       threats: [],
                       lastAnalyzedAt: new Date(),
                       monitoringEnabled: true

@@ -155,6 +155,7 @@ export default function CompetitorsPageEnhanced() {
         ],
         lastAnalyzedAt: new Date('2025-01-15'),
         monitoringEnabled: true,
+        analyzed: false,
         techStack: {
           cms: 'WordPress',
           analytics: 'Google Analytics',
@@ -203,6 +204,7 @@ export default function CompetitorsPageEnhanced() {
       threats: [],
       lastAnalyzedAt: new Date(),
       monitoringEnabled: true,
+      analyzed: false,
     }
     
     setCompetitors([...competitors, newCompetitor])

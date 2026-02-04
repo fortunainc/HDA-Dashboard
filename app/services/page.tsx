@@ -53,8 +53,8 @@ const services: Service[] = [
       'Improved lead-to-opportunity conversion rate',
       'Reduced cost per qualified lead',
       'Pipeline value growth'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       'Minimum commitment: 3 months',
       'Payment: Monthly, invoiced on the 1st',
       'Cancellation: 30-day notice required'
@@ -90,8 +90,8 @@ const services: Service[] = [
       '2-3x faster deal velocity',
       'Reduced deal cycle time',
       'Increased pipeline value'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       'Minimum commitment: 3 months',
       'Payment: Monthly, invoiced on the 1st',
       'Cancellation: 30-day notice required'
@@ -127,8 +127,8 @@ const services: Service[] = [
       'Identified $9,500-$15,000/month upsell opportunities per competitor',
       'Improved market share',
       'Strategic decision-making insights'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       'Minimum commitment: 3 months',
       'Payment: Monthly, invoiced on the 1st',
       'Cancellation: 30-day notice required'
@@ -164,8 +164,8 @@ const services: Service[] = [
       '90%+ customer satisfaction scores',
       'Response time from hours to seconds',
       'Reduced support costs'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       'Minimum commitment: 3 months',
       'Payment: Monthly, invoiced on the 1st',
       'Cancellation: 30-day notice required'
@@ -175,9 +175,9 @@ const services: Service[] = [
   {
     id: 'content-marketing',
     category: 'digital',
-    badge: 'AI Content',
+    badge: 'Content Marketing',
     badgeClass: 'badge-digital',
-    title: 'AI Content Marketing',
+    title: 'Content Marketing',
     price: '$2,500 - $6,000',
     priceUnit: 'month',
     timeline: 'Ongoing',
@@ -202,8 +202,8 @@ const services: Service[] = [
       '50-100% increase in social engagement',
       'Improved search rankings',
       'Lead generation from content'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       'Minimum commitment: 3 months',
       'Payment: Monthly, invoiced on the 1st',
       'Cancellation: 30-day notice required'
@@ -239,8 +239,8 @@ const services: Service[] = [
       '40-60% increase in lead generation',
       'Improved search rankings',
       'Better user experience scores'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       'Minimum commitment: 3 months',
       'Payment: Monthly, invoiced on the 1st',
       'Cancellation: 30-day notice required'
@@ -276,8 +276,8 @@ const services: Service[] = [
       '15-25% reduction in customer churn',
       'Better opportunity prioritization',
       'Data-driven strategic decisions'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       'Minimum commitment: 3 months',
       'Payment: Monthly, invoiced on the 1st',
       'Cancellation: 30-day notice required'
@@ -316,8 +316,8 @@ const services: Service[] = [
       'Instant credibility boost',
       '20-50% increase in website traffic',
       '$5,000-$20,000 in new business from feature'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       '50% deposit to start',
       '50% upon completion',
       'No refunds (media placements are paid upfront)'
@@ -357,8 +357,8 @@ const services: Service[] = [
       'Industry recognition',
       '50-100% increase in website traffic',
       '$15,000-$50,000 in new business from features'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       '50% deposit to start',
       '50% upon completion',
       'No refunds (media placements are paid upfront)'
@@ -400,8 +400,8 @@ const services: Service[] = [
       '100-300% increase in website traffic',
       '$50,000-$150,000 in new business from features',
       'Industry thought leader positioning'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       '50% deposit to start',
       '50% upon completion',
       'No refunds (media placements are paid upfront)'
@@ -441,8 +441,8 @@ const services: Service[] = [
       '200-500% increase in website traffic',
       'Significant boost in brand recognition',
       'Broad audience reach'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       '50% deposit to start',
       '50% upon completion',
       'No refunds (media placements are paid upfront)'
@@ -480,8 +480,8 @@ const services: Service[] = [
       'Instant trust and credibility',
       '50-150% increase in website traffic',
       '$10,000-$40,000 in new business from feature'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       '50% deposit to start',
       '50% upon completion',
       'No refunds (media placements are paid upfront)'
@@ -521,8 +521,8 @@ const services: Service[] = [
       'Industry authority',
       '30-80% increase in website traffic',
       '$3,000-$15,000 in new business from feature'
-    ],
-    contractTerms: [
+    ],    contractTerms: [
+      'For the first month, a 50% deposit is required',
       '50% deposit to start',
       '50% upon completion',
       'No refunds (media placements are paid upfront)'
@@ -544,7 +544,7 @@ const services: Service[] = [
     includes: [
       'AI-Powered Lead Generation ($3,000/month)',
       'AI Competitive Intelligence ($2,000/month)',
-      'AI Content Marketing ($2,000/month)'
+      'Content Marketing ($2,000/month)'
     ],
     deliverables: [
       'Consistent lead flow',
@@ -580,7 +580,7 @@ const services: Service[] = [
       'AI-Powered Lead Generation ($5,000/month)',
       'Sales Pipeline Automation ($4,000/month)',
       'AI Competitive Intelligence ($2,000/month)',
-      'AI Content Marketing ($3,000/month)'
+      'Content Marketing ($3,000/month)'
     ],
     deliverables: [
       'Aggressive lead generation',
@@ -617,7 +617,7 @@ const services: Service[] = [
       'AI-Powered Lead Generation ($8,000/month)',
       'Sales Pipeline Automation ($6,000/month)',
       'AI Competitive Intelligence ($3,500/month)',
-      'AI Content Marketing ($5,000/month)',
+      'Content Marketing ($5,000/month)',
       'AI Website Optimization ($2,000/month)',
       'AI Predictive Analytics ($3,000/month)'
     ],
@@ -957,23 +957,6 @@ export default function ServicesPage() {
                     </li>
                   ))}
                 </ul>
-              </div>
-
-              <div className="mt-6 flex gap-4">
-                <a
-                  href="#contact"
-                  onClick={() => setSelectedService(null)}
-                  className="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  Request Quote
-                </a>
-                <a
-                  href="mailto:info@hustledigital.com"
-                  onClick={() => setSelectedService(null)}
-                  className="flex-1 border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-                >
-                  Contact Us
-                </a>
               </div>
             </div>
           </div>

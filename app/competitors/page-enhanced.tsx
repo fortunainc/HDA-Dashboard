@@ -293,7 +293,7 @@ export default function CompetitorsPageEnhanced() {
     
     // Generate CSV for download
     if (platform === 'csv') {
-      const csvContent = generateCSVContent(competitor)
+      const csvContent = generateCSVContent()
       downloadCSV(csvContent, `${competitor.name.replace(/\s+/g, '_')}_leads.csv`)
     }
     

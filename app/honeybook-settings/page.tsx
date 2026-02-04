@@ -31,6 +31,11 @@ export default function HoneyBookSettingsPage() {
   };
 
   const checkConnection = async () => {
+    // First save the API key to localStorage temporarily for testing
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('honeybook_api_key', apiKey);
+    }
+    
     setConnectionStatus('checking');
     const isConnected = await testConnection();
     setConnectionStatus(isConnected ? 'connected' : 'disconnected');

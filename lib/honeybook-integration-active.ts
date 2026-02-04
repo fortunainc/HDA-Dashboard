@@ -1,9 +1,16 @@
 /**
  * HoneyBook Integration - Active Implementation
- * API Key: 943cdea5-c7ff-41d3-a24e-5927a7183dbf
+ * API Key is read from localStorage
  */
 
-const HONEYBOOK_API_KEY = '943cdea5-c7ff-41d3-a24e-5927a7183dbf';
+// Get API key from localStorage
+function getApiKey(): string {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return localStorage.getItem('honeybook_api_key') || '';
+  }
+  return '';
+}
+
 // Note: HoneyBook API requires proper authentication
 // For now, using localStorage as primary storage
 // API integration can be enabled when proper access is configured
@@ -89,11 +96,17 @@ export async function archiveEmail(email: EmailArchive): Promise<boolean> {
  */
 async function syncEmailToHoneyBook(email: any): Promise<void> {
   try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      console.log('No API key provided, using localStorage only');
+      return;
+    }
+    
     const response = await fetch(`${HONEYBOOK_API_BASE}/emails`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${HONEYBOOK_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         subject: email.subject,
@@ -147,11 +160,17 @@ export async function createBooking(booking: CalendarBooking): Promise<boolean> 
  */
 async function syncBookingToHoneyBook(booking: any): Promise<void> {
   try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      console.log('No API key provided, using localStorage only');
+      return;
+    }
+    
     const response = await fetch(`${HONEYBOOK_API_BASE}/bookings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${HONEYBOOK_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         title: booking.title,
@@ -298,11 +317,17 @@ export function linkEmailToLead(emailId: string, leadId: string): boolean {
  */
 export async function testConnection(): Promise<boolean> {
   try {
+    const apiKey = getApiKey();
+    if (!apiKey || apiKey.trim() === '') {
+      console.log('No API key provided, cannot test connection');
+      return false;
+    }
+    
     // Try to make a simple API call
     const response = await fetch(`${HONEYBOOK_API_BASE}/me`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${HONEYBOOK_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
     });

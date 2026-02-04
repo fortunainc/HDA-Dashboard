@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar />
       <div className="ml-64 transition-all duration-300">
         <Header />
-        <main className="p-6 mt-16">
+        <main className="pt-20 px-6 pb-6">
           {children}
         </main>
       </div>

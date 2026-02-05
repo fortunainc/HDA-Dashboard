@@ -14,14 +14,26 @@ const industries = [
 ]
 
 export default function IndustriesPage() {
-  const [industries, setIndustries] = useState([
-    { id: 1, name: 'Technology', description: 'SaaS, software development, tech startups', avgDealValue: '$8,000', activeLeads: 45, conversionRate: '4.2%' },
-    { id: 2, name: 'Financial Services', description: 'Banking, insurance, fintech, investment', avgDealValue: '$12,000', activeLeads: 28, conversionRate: '5.1%' },
-    { id: 3, name: 'Healthcare', description: 'Health tech, medical devices, pharmaceutical', avgDealValue: '$15,000', activeLeads: 22, conversionRate: '3.8%' },
-    { id: 4, name: 'E-Commerce', description: 'Online retail, D2C brands, marketplaces', avgDealValue: '$6,500', activeLeads: 38, conversionRate: '3.5%' },
-    { id: 5, name: 'Consulting', description: 'Management consulting, business advisory', avgDealValue: '$7,000', activeLeads: 32, conversionRate: '4.0%' },
-    { id: 6, name: 'Marketing', description: 'Digital marketing, advertising agencies', avgDealValue: '$5,500', activeLeads: 25, conversionRate: '3.2%' },
-  ])
+  const [industries, setIndustries] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('industries')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Error loading industries from localStorage:', e)
+        }
+      }
+    }
+    return [
+      { id: 1, name: 'Technology', description: 'SaaS, software development, tech startups', avgDealValue: '$8,000', activeLeads: 45, conversionRate: '4.2%' },
+      { id: 2, name: 'Financial Services', description: 'Banking, insurance, fintech, investment', avgDealValue: '$12,000', activeLeads: 28, conversionRate: '5.1%' },
+      { id: 3, name: 'Healthcare', description: 'Health tech, medical devices, pharmaceutical', avgDealValue: '$15,000', activeLeads: 22, conversionRate: '3.8%' },
+      { id: 4, name: 'E-Commerce', description: 'Online retail, D2C brands, marketplaces', avgDealValue: '$6,500', activeLeads: 38, conversionRate: '3.5%' },
+      { id: 5, name: 'Consulting', description: 'Management consulting, business advisory', avgDealValue: '$7,000', activeLeads: 32, conversionRate: '4.0%' },
+      { id: 6, name: 'Marketing', description: 'Digital marketing, advertising agencies', avgDealValue: '$5,500', activeLeads: 25, conversionRate: '3.2%' },
+    ]
+  })
 
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -32,7 +44,7 @@ export default function IndustriesPage() {
     conversionRate: '3.0%'
   })
 
-  const filteredIndustries = industries.filter(industry =>
+  const filteredIndustries = industries.filter((industry: typeof industries[0]) =>
     industry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     industry.description.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -47,7 +59,9 @@ export default function IndustriesPage() {
       activeLeads: 0,
       conversionRate: newIndustry.conversionRate
     }
-    setIndustries([...industries, industry])
+    const updatedIndustries = [...industries, industry]
+    setIndustries(updatedIndustries)
+    localStorage.setItem('industries', JSON.stringify(updatedIndustries))
     setShowAddModal(false)
     setNewIndustry({
       name: '',
@@ -208,7 +222,7 @@ export default function IndustriesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredIndustries.map((industry) => (
+                {filteredIndustries.map((industry: typeof industries[0]) => (
                   <tr key={industry.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-4">
                       <p className="font-medium text-gray-900">{industry.name}</p>

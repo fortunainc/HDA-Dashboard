@@ -5,14 +5,27 @@ import DashboardLayout from '../../components/DashboardLayout'
 import { Plus, Target, TrendingUp, DollarSign, Calendar } from 'lucide-react'
 
 export default function TargetsPage() {
-  const [targets, setTargets] = useState([
-    { id: 1, name: 'Monthly Revenue Target', type: 'Revenue', current: 12450, target: 25000, period: 'Month', unit: '$' },
-    { id: 2, name: 'Quarterly Revenue Target', type: 'Revenue', current: 45000, target: 90000, period: 'Quarter', unit: '$' },
-    { id: 3, name: 'Yearly Revenue Target', type: 'Revenue', current: 150000, target: 300000, period: 'Year', unit: '$' },
-    { id: 4, name: 'New Leads Target', type: 'Leads', current: 234, target: 500, period: 'Month', unit: '' },
-    { id: 5, name: 'Conversion Rate Target', type: 'Rate', current: 3.2, target: 5.0, period: 'Month', unit: '%' },
-    { id: 6, name: 'New Clients Target', type: 'Clients', current: 12, target: 25, period: 'Quarter', unit: '' },
-  ])
+  // Load targets from localStorage on mount, save on change
+  const [targets, setTargets] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('targets')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Error loading targets from localStorage:', e)
+        }
+      }
+    }
+    return [
+      { id: 1, name: 'Monthly Revenue Target', type: 'Revenue', current: 12450, target: 25000, period: 'Month', unit: '$' },
+      { id: 2, name: 'Quarterly Revenue Target', type: 'Revenue', current: 45000, target: 90000, period: 'Quarter', unit: '$' },
+      { id: 3, name: 'Yearly Revenue Target', type: 'Revenue', current: 150000, target: 300000, period: 'Year', unit: '$' },
+      { id: 4, name: 'New Leads Target', type: 'Leads', current: 234, target: 500, period: 'Month', unit: '' },
+      { id: 5, name: 'Conversion Rate Target', type: 'Rate', current: 3.2, target: 5.0, period: 'Month', unit: '%' },
+      { id: 6, name: 'New Clients Target', type: 'Clients', current: 12, target: 25, period: 'Quarter', unit: '' },
+    ]
+  })
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -49,7 +62,9 @@ export default function TargetsPage() {
       period: newTarget.period,
       unit: newTarget.unit
     }
-    setTargets([...targets, target])
+    const updatedTargets = [...targets, target]
+    setTargets(updatedTargets)
+    localStorage.setItem('targets', JSON.stringify(updatedTargets))
     setShowAddModal(false)
     setNewTarget({
       name: '',
@@ -63,18 +78,21 @@ export default function TargetsPage() {
 
   const handleEditTarget = (e: React.FormEvent) => {
     e.preventDefault()
-    const updatedTargets = targets.map(t => 
+    const updatedTargets = targets.map((t: typeof targets[0])=> 
       t.id === selectedTarget.id 
         ? { ...t, ...selectedTarget, current: parseFloat(selectedTarget.current.toString()), target: parseFloat(selectedTarget.target.toString()) }
         : t
     )
     setTargets(updatedTargets)
+    localStorage.setItem('targets', JSON.stringify(updatedTargets))
     setShowEditModal(false)
     setSelectedTarget(null)
   }
 
   const handleDeleteTarget = () => {
-    setTargets(targets.filter(t => t.id !== selectedTarget.id))
+    const updatedTargets = targets.filter((t: typeof targets[0])=> t.id !== selectedTarget.id)
+    setTargets(updatedTargets)
+    localStorage.setItem('targets', JSON.stringify(updatedTargets))
     setShowDeleteModal(false)
     setSelectedTarget(null)
   }
@@ -233,7 +251,7 @@ export default function TargetsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {targets.map((target) => {
+          {targets.map((target: typeof targets[0]) => {
             const progress = parseFloat(getProgressPercentage(target.current, target.target))
             const progressColor = getProgressColor(progress)
 

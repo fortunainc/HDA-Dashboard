@@ -1,8 +1,9 @@
 'use client'
 
 import DashboardLayout from '../../components/DashboardLayout'
-import { Calendar, Clock, User, Video, MapPin, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { Calendar, Clock, User, Video, MapPin, Plus, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { honeybookSeamless } from '../../lib/honeybook-seamless-integration'
 
 const bookings = [
   { id: 1, title: 'Strategy Call with Acme Corp', date: '2024-01-18', time: '10:00 AM', client: 'John Smith', type: 'Video Call', status: 'confirmed' },
@@ -24,7 +25,19 @@ const getStatusColor = (status: string) => {
 
 export default function BookingsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [bookingsData, setBookingsData] = useState(bookings);
+  const [bookingsData, setBookingsData] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bookings')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Error loading bookings from localStorage:', e)
+        }
+      }
+    }
+    return bookings
+  });
   const [newBooking, setNewBooking] = useState({
     title: '',
     date: '',
@@ -33,6 +46,74 @@ export default function BookingsPage() {
     type: 'Video Call',
     status: 'pending'
   });
+  const [honeybookConnected, setHoneybookConnected] = useState(false);
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null);
+
+  useEffect(() => {
+    checkConnections();
+  }, []);
+
+  const checkConnections = async () => {
+    // Check HoneyBook connection
+    const hbConnected = await honeybookSeamless.testConnection();
+    setHoneybookConnected(hbConnected);
+
+    // Google Calendar connection requires manual setup via settings
+    // For now, mark as not connected until user sets it up
+    setGoogleCalendarConnected(false);
+  };
+
+  const syncWithHoneyBook = async () => {
+    setSyncing(true);
+    setSyncStatus(null);
+
+    try {
+      const result = await honeybookSeamless.syncAll();
+      
+      if (result.success) {
+        setSyncStatus({
+          type: 'success',
+          message: `Synced ${result.contacts} contacts, ${result.messages} messages, and ${result.bookings} bookings from HoneyBook`
+        });
+        setHoneybookConnected(true);
+      } else {
+        setSyncStatus({
+          type: 'error',
+          message: 'Failed to sync with HoneyBook. Please check your API key.'
+        });
+      }
+    } catch (error) {
+      setSyncStatus({
+        type: 'error',
+        message: 'An error occurred while syncing with HoneyBook.'
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const connectGoogleCalendar = () => {
+    // For now, show informative message about Google Calendar setup
+    alert(`Google Calendar integration requires:
+
+1. Google Cloud Console Project
+2. Enable Calendar API
+3. Create OAuth 2.0 credentials
+4. Configure redirect URLs
+
+For now, your bookings are stored locally and synced with HoneyBook. 
+This ensures your data is always available and backed up.
+
+To enable full Google Calendar integration, please:
+1. Go to console.cloud.google.com
+2. Create a new project
+3. Enable Calendar API
+4. Create OAuth 2.0 Client ID
+5. Add your domain to authorized redirect URIs
+6. Configure the environment variables in your dashboard`);
+  };
 
   const handleAddBooking = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +126,9 @@ export default function BookingsPage() {
       type: newBooking.type,
       status: newBooking.status
     };
-    setBookingsData([...bookingsData, booking]);
+    const updatedBookings = [...bookingsData, booking];
+    setBookingsData(updatedBookings);
+    localStorage.setItem('bookings', JSON.stringify(updatedBookings));
     setShowAddModal(false);
     setNewBooking({
       title: '',
@@ -248,30 +331,99 @@ export default function BookingsPage() {
             </div>
 
             <div className="card mt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Calendar Sync</h2>
-              <p className="text-sm text-gray-600 mb-4">Connect your calendar to sync bookings automatically.</p>
-              <div className="space-y-2">
-                <button 
-                  onClick={() => alert('Google Calendar integration requires OAuth setup. This would connect to Google Calendar API to sync bookings. Please configure Google Cloud Console credentials to enable this feature.')}
-                  className="w-full btn btn-secondary text-left flex items-center gap-2 hover:bg-gray-100"
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Integration Status</h2>
+              
+              {/* HoneyBook Status */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${honeybookConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                    <span className="text-sm font-medium text-gray-900">HoneyBook</span>
+                  </div>
+                  {honeybookConnected ? (
+                    <span className="text-xs text-green-600 font-medium">Connected</span>
+                  ) : (
+                    <span className="text-xs text-yellow-600 font-medium">Not Connected</span>
+                  )}
+                </div>
+                
+                {syncStatus && (
+                  <div className={`p-3 rounded-lg mb-3 ${
+                    syncStatus.type === 'success' ? 'bg-green-50' : 
+                    syncStatus.type === 'error' ? 'bg-red-50' : 'bg-blue-50'
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      {syncStatus.type === 'success' && <CheckCircle size={16} className="text-green-600 mt-0.5" />}
+                      {syncStatus.type === 'error' && <AlertCircle size={16} className="text-red-600 mt-0.5" />}
+                      {syncStatus.type === 'info' && <AlertCircle size={16} className="text-blue-600 mt-0.5" />}
+                      <p className={`text-xs ${
+                        syncStatus.type === 'success' ? 'text-green-700' : 
+                        syncStatus.type === 'error' ? 'text-red-700' : 'text-blue-700'
+                      }`}>
+                        {syncStatus.message}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={syncWithHoneyBook}
+                    disabled={syncing}
+                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {syncing ? (
+                      <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={16} />
+                        Sync Now
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/honeybook-settings'}
+                    className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    Settings
+                  </button>
+                </div>
+              </div>
+
+              {/* Google Calendar Status */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${googleCalendarConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                    <span className="text-sm font-medium text-gray-900">Google Calendar</span>
+                  </div>
+                  {googleCalendarConnected ? (
+                    <span className="text-xs text-green-600 font-medium">Connected</span>
+                  ) : (
+                    <span className="text-xs text-yellow-600 font-medium">Setup Required</span>
+                  )}
+                </div>
+
+                <button
+                  onClick={connectGoogleCalendar}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                 >
-                  <div className="w-4 h-4 bg-blue-600 rounded"></div>
                   Connect Google Calendar
                 </button>
-                <button 
-                  onClick={() => alert('Microsoft Outlook integration requires OAuth setup. This would connect to Microsoft Graph API to sync bookings. Please configure Azure AD credentials to enable this feature.')}
-                  className="w-full btn btn-secondary text-left flex items-center gap-2 hover:bg-gray-100"
-                >
-                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                  Connect Microsoft Outlook
-                </button>
-                <button 
-                  onClick={() => window.location.href = '/honeybook-settings'}
-                  className="w-full btn btn-secondary text-left flex items-center gap-2 hover:bg-gray-100"
-                >
-                  <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                  Connect Honeybook
-                </button>
+              </div>
+
+              {/* Info Box */}
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h3 className="text-sm font-medium text-blue-900 mb-2">📋 How Integration Works</h3>
+                <ul className="text-xs text-blue-700 space-y-1">
+                  <li>• <strong>Primary Storage:</strong> Your bookings are always stored locally (localStorage)</li>
+                  <li>• <strong>HoneyBook Sync:</strong> Backup and sync with HoneyBook when connected</li>
+                  <li>• <strong>Google Calendar:</strong> Optional sync for calendar integration (requires setup)</li>
+                  <li>• <strong>Seamless:</strong> Your data is always available, no matter what</li>
+                </ul>
               </div>
             </div>
           </div>

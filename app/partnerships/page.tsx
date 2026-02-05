@@ -22,13 +22,25 @@ const getStatusColor = (status: string) => {
 }
 
 export default function PartnershipsPage() {
-  const [partnerships, setPartnerships] = useState([
-    { id: 1, name: 'Tech Marketing Hub', type: 'Referral Partner', status: 'Active', revenue: '$12,500', commission: '15%', leads: 45 },
-    { id: 2, name: 'Digital Growth Agency', type: 'Strategic Alliance', status: 'Active', revenue: '$8,200', commission: '10%', leads: 32 },
-    { id: 3, name: 'SaaS Consultants Pro', type: 'Affiliate', status: 'Active', revenue: '$5,100', commission: '20%', leads: 28 },
-    { id: 4, name: 'Business Development Group', type: 'Joint Venture', status: 'Pending', revenue: '$0', commission: '25%', leads: 0 },
-    { id: 5, name: 'Marketing Innovators', type: 'Referral Partner', status: 'Inactive', revenue: '$3,200', commission: '12%', leads: 15 },
-  ])
+  const [partnerships, setPartnerships] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('partnerships')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Error loading partnerships from localStorage:', e)
+        }
+      }
+    }
+    return [
+      { id: 1, name: 'Tech Marketing Hub', type: 'Referral Partner', status: 'Active', revenue: '$12,500', commission: '15%', leads: 45 },
+      { id: 2, name: 'Digital Growth Agency', type: 'Strategic Alliance', status: 'Active', revenue: '$8,200', commission: '10%', leads: 32 },
+      { id: 3, name: 'SaaS Consultants Pro', type: 'Affiliate', status: 'Active', revenue: '$5,100', commission: '20%', leads: 28 },
+      { id: 4, name: 'Business Development Group', type: 'Joint Venture', status: 'Pending', revenue: '$0', commission: '25%', leads: 0 },
+      { id: 5, name: 'Marketing Innovators', type: 'Referral Partner', status: 'Inactive', revenue: '$3,200', commission: '12%', leads: 15 },
+    ]
+  })
 
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -39,7 +51,7 @@ export default function PartnershipsPage() {
     commission: '15%'
   })
 
-  const filteredPartnerships = partnerships.filter(partnership =>
+  const filteredPartnerships = partnerships.filter((partnership: typeof partnerships[0]) =>
     partnership.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     partnership.type.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -55,7 +67,9 @@ export default function PartnershipsPage() {
       commission: newPartnership.commission,
       leads: 0
     }
-    setPartnerships([...partnerships, partnership])
+    const updatedPartnerships = [...partnerships, partnership]
+    setPartnerships(updatedPartnerships)
+    localStorage.setItem('partnerships', JSON.stringify(updatedPartnerships))
     setShowAddModal(false)
     setNewPartnership({
       name: '',
@@ -221,7 +235,7 @@ export default function PartnershipsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPartnerships.map((partnership) => (
+                {filteredPartnerships.map((partnership: typeof partnerships[0]) => (
                   <tr key={partnership.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-4">
                       <p className="font-medium text-gray-900">{partnership.name}</p>

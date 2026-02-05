@@ -62,43 +62,6 @@ const services: Service[] = [
     potentialROI: '300-500% ROI - Generate $15,000-$40,000 in qualified opportunities monthly based on average deal size'
   },
   {
-    id: 'sales-pipeline',
-    category: 'digital',
-    badge: 'Sales Automation',
-    badgeClass: 'badge-digital',
-    title: 'Sales Pipeline Automation',
-    price: '$4,000 - $10,000',
-    priceUnit: 'month',
-    timeline: 'Ongoing',
-    description: 'Complete CRM setup, automated follow-ups, and sales process optimization.',
-    includes: [
-      'Complete CRM setup and integration',
-      'Automated follow-up sequences',
-      'Deal tracking and forecasting',
-      'Sales process optimization',
-      'Team training and support'
-    ],
-    deliverables: [
-      'CRM configuration',
-      'Automated workflow setup',
-      'Deal stage definitions',
-      'Sales playbook creation',
-      'Team training sessions'
-    ],
-    successMetrics: [
-      '40-60% improvement in conversion rates',
-      '2-3x faster deal velocity',
-      'Reduced deal cycle time',
-      'Increased pipeline value'
-    ],    contractTerms: [
-      'For the first month, a 50% deposit is required',
-      'Minimum commitment: 3 months',
-      'Payment: Monthly, invoiced on the 1st',
-      'Cancellation: 30-day notice required'
-    ],
-    potentialROI: '400-600% ROI - Increase close rates by 30-50% and reduce sales cycle by 40%'
-  },
-  {
     id: 'competitive-intelligence',
     category: 'digital',
     badge: 'AI Analysis',
@@ -578,7 +541,6 @@ const services: Service[] = [
     description: 'Comprehensive digital services for aggressive growth with automated sales processes.',
     includes: [
       'AI-Powered Lead Generation ($5,000/month)',
-      'Sales Pipeline Automation ($4,000/month)',
       'AI Competitive Intelligence ($2,000/month)',
       'Content Marketing ($3,000/month)'
     ],
@@ -615,7 +577,6 @@ const services: Service[] = [
     description: 'Complete digital transformation with all AI-powered services for maximum growth.',
     includes: [
       'AI-Powered Lead Generation ($8,000/month)',
-      'Sales Pipeline Automation ($6,000/month)',
       'AI Competitive Intelligence ($3,500/month)',
       'Content Marketing ($5,000/month)',
       'AI Website Optimization ($2,000/month)',

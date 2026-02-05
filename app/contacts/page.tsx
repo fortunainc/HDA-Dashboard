@@ -16,7 +16,19 @@ export default function ContactsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [contactsData, setContactsData] = useState(contacts);
+  const [contactsData, setContactsData] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('contacts')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Error loading contacts from localStorage:', e)
+        }
+      }
+    }
+    return contacts
+  });
   const [selectedContact, setSelectedContact] = useState<typeof contacts[0] | null>(null);
   
   const [newContact, setNewContact] = useState({
@@ -29,7 +41,7 @@ export default function ContactsPage() {
     notes: ''
   });
 
-  const filteredContacts = contactsData.filter(contact =>
+  const filteredContacts = contactsData.filter((contact: typeof contacts[0]) =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -47,7 +59,9 @@ export default function ContactsPage() {
       location: newContact.location,
       notes: newContact.notes
     };
-    setContactsData([...contactsData, contact]);
+    const updatedContacts = [...contactsData, contact];
+    setContactsData(updatedContacts);
+    localStorage.setItem('contacts', JSON.stringify(updatedContacts));
     setShowAddModal(false);
     setNewContact({
       name: '',
@@ -63,11 +77,13 @@ export default function ContactsPage() {
   const handleEditContact = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedContact) {
-      setContactsData(contactsData.map(contact => 
+      const updatedContacts = contactsData.map((contact: typeof contacts[0]) => 
         contact.id === selectedContact.id 
           ? { ...contact, ...newContact }
           : contact
-      ));
+      );
+      setContactsData(updatedContacts);
+      localStorage.setItem('contacts', JSON.stringify(updatedContacts));
       setShowEditModal(false);
       setSelectedContact(null);
     }
@@ -75,7 +91,9 @@ export default function ContactsPage() {
 
   const handleDeleteContact = (id: number) => {
     if (confirm('Are you sure you want to delete this contact?')) {
-      setContactsData(contactsData.filter(contact => contact.id !== id));
+      const updatedContacts = contactsData.filter((contact: typeof contacts[0]) => contact.id !== id);
+      setContactsData(updatedContacts);
+      localStorage.setItem('contacts', JSON.stringify(updatedContacts));
     }
   };
 
@@ -317,7 +335,7 @@ export default function ContactsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredContacts.map((contact) => (
+            {filteredContacts.map((contact: typeof contacts[0]) => (
               <div key={contact.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">

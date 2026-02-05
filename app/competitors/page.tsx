@@ -40,17 +40,18 @@ interface Competitor {
 }
 
 export default function CompetitorsPage() {
-  const [competitors, setCompetitors] = useState<Competitor[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null)
-  const [showRevenueCalculator, setShowRevenueCalculator] = useState(false)
-
-  useEffect(() => {
-    // Mock data - in production, this would fetch from API
-    const mockCompetitors: Competitor[] = [
+  const [competitors, setCompetitors] = useState<Competitor[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('competitors')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Error loading competitors from localStorage:', e)
+        }
+      }
+    }
+    return [
       {
         id: '1',
         name: 'Competitor A',
@@ -70,12 +71,15 @@ export default function CompetitorsPage() {
         monitoringEnabled: true,
       },
     ]
-    
-    setCompetitors(mockCompetitors)
-    setLoading(false)
-  }, [])
+  })
+  const [loading, setLoading] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null)
+  const [showRevenueCalculator, setShowRevenueCalculator] = useState(false)
 
-  const filteredCompetitors = competitors.filter(c =>
+  const filteredCompetitors = competitors.filter((c: typeof competitors[0])=>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.website.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -102,7 +106,9 @@ export default function CompetitorsPage() {
     }
     
     // Add to competitors list
-    setCompetitors([...competitors, newCompetitor])
+    const updatedCompetitors = [...competitors, newCompetitor]
+    setCompetitors(updatedCompetitors)
+    localStorage.setItem('competitors', JSON.stringify(updatedCompetitors))
     
     // Close modal
     setShowAddModal(false)
@@ -192,9 +198,11 @@ export default function CompetitorsPage() {
     }
     
     // Update competitors list
-    setCompetitors(competitors.map(c => 
+    const updatedCompetitors = competitors.map((c: typeof competitors[0])=> 
       c.id === id ? analyzedCompetitor : c
-    ))
+    )
+    setCompetitors(updatedCompetitors)
+    localStorage.setItem('competitors', JSON.stringify(updatedCompetitors))
     
     // Clear loading state
     setAnalyzingId(null)
@@ -267,7 +275,7 @@ export default function CompetitorsPage() {
             <div>
               <p className="text-sm text-gray-600">Monitoring</p>
               <p className="text-2xl font-bold text-gray-900">
-                {competitors.filter(c => c.monitoringEnabled).length}
+                {competitors.filter((c: typeof competitors[0])=> c.monitoringEnabled).length}
               </p>
             </div>
             <TrendingUp className="h-8 w-8 text-purple-600" />

@@ -20,7 +20,18 @@ interface MediaContact {
 }
 
 export default function MediaContactsPage() {
-  const [contacts, setContacts] = useState<MediaContact[]>([
+  const [contacts, setContacts] = useState<MediaContact[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('media_contacts');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Error loading media contacts from localStorage:', e);
+        }
+      }
+    }
+    return [
     {
       id: '1',
       name: 'Sarah Johnson',
@@ -89,7 +100,8 @@ export default function MediaContactsPage() {
       lastContact: '2024-01-05',
       status: 'Pending'
     }
-  ]);
+    ];
+  });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -98,7 +110,7 @@ export default function MediaContactsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<MediaContact | null>(null);
 
-  const filteredContacts = contacts.filter(contact => {
+  const filteredContacts = contacts.filter((contact: typeof contacts[0])=> {
     const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          contact.outlet.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'All' || contact.type === typeFilter;
@@ -152,7 +164,7 @@ export default function MediaContactsPage() {
             <div>
               <p className="text-gray-500 text-sm">Active Contacts</p>
               <p className="text-2xl font-bold text-gray-900">
-                {contacts.filter(c => c.status === 'Active').length}
+                {contacts.filter((c: typeof contacts[0])=> c.status === 'Active').length}
               </p>
             </div>
             <Eye className="h-8 w-8 text-green-600" />
@@ -164,7 +176,7 @@ export default function MediaContactsPage() {
             <div>
               <p className="text-gray-500 text-sm">Media Outlets</p>
               <p className="text-2xl font-bold text-gray-900">
-                {new Set(contacts.map(c => c.outlet)).size}
+                {new Set(contacts.map((c: typeof contacts[0])=> c.outlet)).size}
               </p>
             </div>
             <MapPin className="h-8 w-8 text-purple-600" />
@@ -176,7 +188,7 @@ export default function MediaContactsPage() {
             <div>
               <p className="text-gray-500 text-sm">Pending Contacts</p>
               <p className="text-2xl font-bold text-gray-900">
-                {contacts.filter(c => c.status === 'Pending').length}
+                {contacts.filter((c: typeof contacts[0])=> c.status === 'Pending').length}
               </p>
             </div>
             <Filter className="h-8 w-8 text-yellow-600" />
@@ -321,7 +333,7 @@ export default function MediaContactsPage() {
                 <button 
                   onClick={() => {
                     if (confirm('Are you sure you want to delete this contact?')) {
-                      setContacts(contacts.filter(c => c.id !== contact.id));
+                      setContacts(contacts.filter((c: typeof contacts[0])=> c.id !== contact.id));
                     }
                   }}
                   className="flex-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 flex items-center justify-center gap-1"
@@ -454,7 +466,9 @@ export default function MediaContactsPage() {
                 status: formData.get('status') as MediaContact['status'],
                 lastContact: new Date().toISOString().split('T')[0]
               };
-              setContacts([...contacts, newContact]);
+              const updatedContacts = [...contacts, newContact];
+              setContacts(updatedContacts);
+              localStorage.setItem('media_contacts', JSON.stringify(updatedContacts));
               setShowModal(false);
               e.currentTarget.reset();
             }} className="p-6 space-y-4">
@@ -631,7 +645,9 @@ export default function MediaContactsPage() {
                 notes: formData.get('notes') as string,
                 status: formData.get('status') as MediaContact['status'],
               };
-              setContacts(contacts.map(c => c.id === selectedContact.id ? updatedContact : c));
+              const updatedContacts = contacts.map((c: typeof contacts[0])=> c.id === selectedContact.id ? updatedContact : c);
+              setContacts(updatedContacts);
+              localStorage.setItem('media_contacts', JSON.stringify(updatedContacts));
               setShowEditModal(false);
             }} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">

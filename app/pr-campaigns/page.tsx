@@ -31,7 +31,18 @@ interface MediaPlacement {
 }
 
 export default function PRCampaignsPage() {
-  const [campaigns, setCampaigns] = useState<PRCampaign[]>([
+  const [campaigns, setCampaigns] = useState<PRCampaign[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('pr_campaigns');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Error loading PR campaigns from localStorage:', e);
+        }
+      }
+    }
+    return [
     {
       id: '1',
       clientName: 'HealthTech Innovations',
@@ -101,7 +112,8 @@ export default function PRCampaignsPage() {
       roi: 75000,
       notes: 'Commercial aired 120 times, exceeded expectations'
     }
-  ]);
+    ];
+  });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -135,7 +147,9 @@ export default function PRCampaignsPage() {
       roi: 0,
       notes: newCampaign.notes
     }
-    setCampaigns([...campaigns, campaign])
+    const updatedCampaigns = [...campaigns, campaign]
+    setCampaigns(updatedCampaigns)
+    localStorage.setItem('pr_campaigns', JSON.stringify(updatedCampaigns))
     setShowModal(false)
     setNewCampaign({
       clientName: '',
@@ -157,13 +171,15 @@ export default function PRCampaignsPage() {
   const handleUpdateCampaign = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCampaign) {
-      setCampaigns(campaigns.map(c => 
+      const updatedCampaigns = campaigns.map((c: typeof campaigns[0])=> 
         c.id === selectedCampaign.id ? { 
           ...selectedCampaign, 
           ...newCampaign,
           investment: parseInt(newCampaign.investment)
         } : c
-      ));
+      );
+      setCampaigns(updatedCampaigns);
+      localStorage.setItem('pr_campaigns', JSON.stringify(updatedCampaigns));
       setShowEditModal(false);
       setSelectedCampaign(null);
       setNewCampaign({
@@ -181,11 +197,13 @@ export default function PRCampaignsPage() {
 
   const handleDeleteCampaign = (id: string) => {
     if (confirm('Are you sure you want to delete this PR campaign?')) {
-      setCampaigns(campaigns.filter(c => c.id !== id));
+      const updatedCampaigns = campaigns.filter((c: typeof campaigns[0])=> c.id !== id);
+      setCampaigns(updatedCampaigns);
+      localStorage.setItem('pr_campaigns', JSON.stringify(updatedCampaigns));
     }
   };
 
-  const filteredCampaigns = campaigns.filter(campaign => {
+  const filteredCampaigns = campaigns.filter((campaign: typeof campaigns[0])=> {
     const matchesSearch = campaign.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          campaign.packageName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || campaign.status === statusFilter;
@@ -230,7 +248,7 @@ export default function PRCampaignsPage() {
             <div>
               <p className="text-gray-500 text-sm">Active Campaigns</p>
               <p className="text-2xl font-bold text-gray-900">
-                {campaigns.filter(c => c.status === 'In Progress').length}
+                {campaigns.filter((c: typeof campaigns[0])=> c.status === 'In Progress').length}
               </p>
             </div>
             <Megaphone className="h-8 w-8 text-blue-600" />

@@ -21,25 +21,18 @@ interface Campaign {
 }
 
 export default function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
-  const [filterStatus, setFilterStatus] = useState('all')
-
-  const [newCampaign, setNewCampaign] = useState({
-    name: '',
-    type: 'EMAIL_OUTREACH',
-    description: '',
-    startDate: '',
-    endDate: '',
-    budget: ''
-  })
-
-  useEffect(() => {
-    // Mock data - in production, this would fetch from API
-    const mockCampaigns: Campaign[] = [
+  const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('campaigns')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Error loading campaigns from localStorage:', e)
+        }
+      }
+    }
+    return [
       {
         id: '1',
         name: 'Q1 Outreach Campaign',
@@ -71,10 +64,21 @@ export default function CampaignsPage() {
         convertedCount: 0,
       },
     ]
-    
-    setCampaigns(mockCampaigns)
-    setLoading(false)
-  }, [])
+  })
+  const [loading, setLoading] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [filterStatus, setFilterStatus] = useState('all')
+
+  const [newCampaign, setNewCampaign] = useState({
+    name: '',
+    type: 'EMAIL_OUTREACH',
+    description: '',
+    startDate: '',
+    endDate: '',
+    budget: ''
+  })
 
   const handleCreateCampaign = (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,7 +97,9 @@ export default function CampaignsPage() {
       repliedCount: 0,
       convertedCount: 0,
     }
-    setCampaigns([...campaigns, campaign])
+    const updatedCampaigns = [...campaigns, campaign]
+    setCampaigns(updatedCampaigns)
+    localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns))
     setShowCreateModal(false)
     setNewCampaign({
       name: '',
@@ -108,7 +114,7 @@ export default function CampaignsPage() {
   const handleEditCampaign = (e: React.FormEvent) => {
     e.preventDefault()
     if (selectedCampaign) {
-      setCampaigns(campaigns.map(camp => 
+      const updatedCampaigns = campaigns.map((camp: typeof campaigns[0])=> 
         camp.id === selectedCampaign.id 
           ? { 
               ...camp, 
@@ -120,7 +126,9 @@ export default function CampaignsPage() {
               budget: parseInt(newCampaign.budget)
             }
           : camp
-      ))
+      )
+      setCampaigns(updatedCampaigns)
+      localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns))
       setShowEditModal(false)
       setSelectedCampaign(null)
     }
@@ -128,7 +136,9 @@ export default function CampaignsPage() {
 
   const handleDeleteCampaign = (id: string) => {
     if (confirm('Are you sure you want to delete this campaign?')) {
-      setCampaigns(campaigns.filter(camp => camp.id !== id))
+      const updatedCampaigns = campaigns.filter((camp: typeof campaigns[0])=> camp.id !== id)
+      setCampaigns(updatedCampaigns)
+      localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns))
     }
   }
 
@@ -145,8 +155,7 @@ export default function CampaignsPage() {
     setShowEditModal(true)
   }
 
-  const filteredCampaigns = campaigns.filter(
-    campaign => filterStatus === 'all' || campaign.status === filterStatus
+  const filteredCampaigns = campaigns.filter((campaign: typeof campaigns[0])=> filterStatus === 'all' || campaign.status === filterStatus
   )
 
   const getStatusColor = (status: string) => {

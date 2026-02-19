@@ -1,0 +1,10 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/app/generated/prisma
+
+# Next.js build output
+.next/
+.next/
+out/

@@ -1,0 +1,275 @@
+// Data Export Service
+import { db } from '../db'
+import Papa from 'papaparse'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import { autoTable } from 'jspdf-autotable'
+
+export interface ExportOptions {
+  format: 'csv' | 'excel' | 'pdf'
+  dataType: 'leads' | 'contacts' | 'deals' | 'campaigns' | 'competitors'
+  filters?: any
+}
+
+export class ExportService {
+  // Export data in specified format
+  static async exportData(options: ExportOptions) {
+    try {
+      let data: any[] = []
+      let filename = ''
+
+      // Fetch data based on type
+      switch (options.dataType) {
+        case 'leads':
+          data = await this.getLeadsData(options.filters)
+          filename = 'leads'
+          break
+        case 'contacts':
+          data = await this.getContactsData(options.filters)
+          filename = 'contacts'
+          break
+        case 'deals':
+          data = await this.getDealsData(options.filters)
+          filename = 'deals'
+          break
+        case 'campaigns':
+          data = await this.getCampaignsData(options.filters)
+          filename = 'campaigns'
+          break
+        case 'competitors':
+          data = await this.getCompetitorsData(options.filters)
+          filename = 'competitors'
+          break
+        default:
+          return { success: false, error: 'Invalid data type' }
+      }
+
+      if (data.length === 0) {
+        return { success: false, error: 'No data to export' }
+      }
+
+      // Export based on format
+      let result: any
+      const timestamp = new Date().toISOString().split('T')[0]
+
+      switch (options.format) {
+        case 'csv':
+          result = this.exportToCSV(data)
+          filename = `${filename}_${timestamp}.csv`
+          break
+        case 'excel':
+          result = this.exportToExcel(data)
+          filename = `${filename}_${timestamp}.xlsx`
+          break
+        case 'pdf':
+          result = this.exportToPDF(data, options.dataType)
+          filename = `${filename}_${timestamp}.pdf`
+          break
+        default:
+          return { success: false, error: 'Invalid export format' }
+      }
+
+      return {
+        success: true,
+        data: result,
+        filename,
+        mimeType: this.getMimeType(options.format),
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error)
+      return { success: false, error: 'Failed to export data' }
+    }
+  }
+
+  // Get leads data
+  private static async getLeadsData(filters?: any) {
+    const leads = await db.lead.findMany({
+      where: filters,
+      include: {
+        contacts: true,
+        deals: true,
+      },
+    })
+
+    return leads.map(lead => ({
+      ID: lead.id,
+      'First Name': lead.firstName,
+      'Last Name': lead.lastName,
+      Email: lead.email,
+      Phone: lead.phone,
+      Company: lead.company,
+      Title: lead.title,
+      Industry: lead.industry,
+      Website: lead.website,
+      LinkedIn: lead.linkedinUrl,
+      Status: lead.status,
+      Source: lead.source,
+      Score: lead.score,
+      'Employee Count': lead.employeeCount,
+      Revenue: lead.revenue,
+      'Founded Year': lead.foundedYear,
+      'Funding Stage': lead.fundingStage,
+      Technologies: lead.technologies?.join(', '),
+      Notes: lead.notes,
+      'Created At': lead.createdAt.toISOString(),
+      'Updated At': lead.updatedAt.toISOString(),
+    }))
+  }
+
+  // Get contacts data
+  private static async getContactsData(filters?: any) {
+    const contacts = await db.contact.findMany({
+      where: filters,
+      include: {
+        lead: true,
+      },
+    })
+
+    return contacts.map(contact => ({
+      ID: contact.id,
+      'First Name': contact.firstName,
+      'Last Name': contact.lastName,
+      Email: contact.email,
+      Phone: contact.phone,
+      Company: contact.company,
+      Title: contact.title,
+      Type: contact.type,
+      'Lead ID': contact.leadId,
+      'Lead Email': contact.lead?.email,
+      'Created At': contact.createdAt.toISOString(),
+    }))
+  }
+
+  // Get deals data
+  private static async getDealsData(filters?: any) {
+    const deals = await db.deal.findMany({
+      where: filters,
+      include: {
+        lead: true,
+      },
+    })
+
+    return deals.map(deal => ({
+      ID: deal.id,
+      Name: deal.name,
+      Amount: deal.amount,
+      Stage: deal.stage,
+      Probability: deal.probability,
+      'Expected Close Date': deal.expectedCloseDate?.toISOString(),
+      'Actual Close Date': deal.actualCloseDate?.toISOString(),
+      'Lead Email': deal.lead.email,
+      'Lead Company': deal.lead.company,
+      'Created At': deal.createdAt.toISOString(),
+    }))
+  }
+
+  // Get campaigns data
+  private static async getCampaignsData(filters?: any) {
+    const campaigns = await db.campaign.findMany({
+      where: filters,
+      include: {
+        leads: true,
+      },
+    })
+
+    return campaigns.map(campaign => ({
+      ID: campaign.id,
+      Name: campaign.name,
+      Type: campaign.type,
+      Status: campaign.status,
+      Description: campaign.description,
+      'Start Date': campaign.startDate?.toISOString(),
+      'End Date': campaign.endDate?.toISOString(),
+      Budget: campaign.budget,
+      'Sent Count': campaign.sentCount,
+      'Opened Count': campaign.openedCount,
+      'Clicked Count': campaign.clickedCount,
+      'Replied Count': campaign.repliedCount,
+      'Converted Count': campaign.convertedCount,
+      'Created At': campaign.createdAt.toISOString(),
+    }))
+  }
+
+  // Get competitors data
+  private static async getCompetitorsData(filters?: any) {
+    const competitors = await db.competitor.findMany({
+      where: filters,
+    })
+
+    return competitors.map(competitor => ({
+      ID: competitor.id,
+      Name: competitor.name,
+      Website: competitor.website,
+      Industry: competitor.industry,
+      Description: competitor.description,
+      'Founded Year': competitor.foundedYear,
+      'Employee Count': competitor.employeeCount,
+      Revenue: competitor.revenue,
+      Funding: competitor.funding,
+      'Funding Stage': competitor.fundingStage,
+      'LinkedIn URL': competitor.linkedinUrl,
+      'Twitter URL': competitor.twitterUrl,
+      'Facebook URL': competitor.facebookUrl,
+      'Monthly Visitors': competitor.monthlyVisitors,
+      'SEO Score': competitor.seoScore,
+      'Content Score': competitor.contentScore,
+      'Social Score': competitor.socialScore,
+      Strengths: competitor.strengths?.join(', '),
+      Weaknesses: competitor.weaknesses?.join(', '),
+      Opportunities: competitor.opportunities?.join(', '),
+      Threats: competitor.threats?.join(', '),
+      'Last Analyzed': competitor.lastAnalyzedAt.toISOString(),
+      'Monitoring Enabled': competitor.monitoringEnabled,
+    }))
+  }
+
+  // Export to CSV
+  private static exportToCSV(data: any[]): string {
+    const csv = Papa.unparse(data)
+    return csv
+  }
+
+  // Export to Excel
+  private static exportToExcel(data: any[]): Buffer {
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data')
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+  }
+
+  // Export to PDF
+  private static exportToPDF(data: any[], dataType: string): Buffer {
+    const doc = new jsPDF()
+    
+    // Add title
+    doc.setFontSize(18)
+    doc.text(`${dataType.charAt(0).toUpperCase() + dataType.slice(1)} Report`, 14, 22)
+    
+    doc.setFontSize(10)
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 30)
+    
+    // Add table
+    const headers = Object.keys(data[0])
+    const rows = data.map(row => Object.values(row))
+    
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 40,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [66, 139, 202] },
+    })
+    
+    return Buffer.from(doc.output('arraybuffer'))
+  }
+
+  // Get MIME type
+  private static getMimeType(format: string): string {
+    const mimeTypes: Record<string, string> = {
+      csv: 'text/csv',
+      excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      pdf: 'application/pdf',
+    }
+    return mimeTypes[format] || 'application/octet-stream'
+  }
+}

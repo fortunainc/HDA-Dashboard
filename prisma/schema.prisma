@@ -1,0 +1,505 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User & Authentication
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  leads         Lead[]
+  contacts      Contact[]
+  deals         Deal[]
+  campaigns     Campaign[]
+  activities    Activity[]
+  HoneyBookSettings HoneyBookSettings?
+}
+
+// HoneyBook Integration
+model HoneyBookSettings {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  apiKey          String?
+  webhookSecret   String?
+  lastSyncAt      DateTime?
+  syncEnabled     Boolean @default(true)
+  
+  user            User    @relation(fields: [userId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Lead Management
+model Lead {
+  id              String    @id @default(cuid())
+  firstName       String
+  lastName        String?
+  email           String    @unique
+  phone           String?
+  company         String?
+  title           String?
+  industry        String?
+  website         String?
+  linkedinUrl     String?
+  status          LeadStatus @default(PENDING)
+  source          String?
+  score           Int       @default(0)
+  notes           String?
+  
+  // Enrichment Data
+  employeeCount   Int?
+  revenue         Float?
+  foundedYear     Int?
+  technologies    String[]  // Array of tech stack
+  fundingStage    String?
+  lastFundingDate DateTime?
+  lastFundingAmount Float?
+  
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  contacts        Contact[]
+  deals           Deal[]
+  activities      Activity[]
+  campaignLeads   CampaignLead[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([status])
+  @@index([industry])
+  @@index([score])
+}
+
+enum LeadStatus {
+  PENDING
+  CONTACTED
+  ENGAGED
+  QUALIFIED
+  PROPOSAL
+  WON
+  LOST
+  NURTURE
+}
+
+// Contact Management
+model Contact {
+  id              String    @id @default(cuid())
+  firstName       String
+  lastName        String?
+  email           String    @unique
+  phone           String?
+  company         String?
+  title           String?
+  type            ContactType @default(LEAD)
+  
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  leadId          String?
+  lead            Lead?     @relation(fields: [leadId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([type])
+}
+
+enum ContactType {
+  LEAD
+  CLIENT
+  PARTNER
+  VENDOR
+}
+
+// Deal/Sales Pipeline
+model Deal {
+  id              String    @id @default(cuid())
+  name            String
+  amount          Float?
+  stage           DealStage @default(PROSPECTING)
+  probability     Int       @default(0)
+  expectedCloseDate DateTime?
+  actualCloseDate DateTime?
+  
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  leadId          String
+  lead            Lead      @relation(fields: [leadId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([stage])
+  @@index([probability])
+}
+
+enum DealStage {
+  PROSPECTING
+  QUALIFICATION
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+// Campaign Management
+model Campaign {
+  id              String    @id @default(cuid())
+  name            String
+  type            CampaignType
+  status          CampaignStatus @default(DRAFT)
+  description     String?
+  
+  // Campaign Settings
+  startDate       DateTime?
+  endDate         DateTime?
+  budget          Float?
+  
+  // Metrics
+  sentCount       Int       @default(0)
+  openedCount     Int       @default(0)
+  clickedCount    Int       @default(0)
+  repliedCount    Int       @default(0)
+  convertedCount  Int       @default(0)
+  
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  leads           CampaignLead[]
+  emails          CampaignEmail[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([type])
+  @@index([status])
+}
+
+enum CampaignType {
+  EMAIL_OUTREACH
+  LINKEDIN_OUTREACH
+  ADS
+  CONTENT
+  REFERRAL
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+// Campaign-Lead Relationship
+model CampaignLead {
+  id              String    @id @default(cuid())
+  campaignId      String
+  campaign        Campaign  @relation(fields: [campaignId], references: [id])
+  leadId          String
+  lead            Lead      @relation(fields: [leadId], references: [id])
+  
+  status          CampaignLeadStatus @default(QUEUED)
+  sentAt          DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  repliedAt       DateTime?
+  convertedAt     DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([campaignId, leadId])
+  @@index([status])
+}
+
+enum CampaignLeadStatus {
+  QUEUED
+  SENT
+  OPENED
+  CLICKED
+  REPLIED
+  CONVERTED
+  BOUNCED
+  FAILED
+}
+
+// Campaign Email Templates
+model CampaignEmail {
+  id              String    @id @default(cuid())
+  campaignId      String
+  campaign        Campaign  @relation(fields: [campaignId], references: [id])
+  
+  subject         String
+  body            String
+  sendOrder       Int
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Activity Tracking
+model Activity {
+  id              String    @id @default(cuid())
+  type            ActivityType
+  title           String
+  description     String?
+  
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  leadId          String?
+  lead            Lead?     @relation(fields: [leadId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum ActivityType {
+  EMAIL_SENT
+  EMAIL_OPENED
+  EMAIL_CLICKED
+  EMAIL_REPLIED
+  CALL_SCHEDULED
+  CALL_COMPLETED
+  MEETING_SCHEDULED
+  MEETING_COMPLETED
+  NOTE_ADDED
+  STATUS_CHANGED
+  TASK_COMPLETED
+}
+
+// Competitor Intelligence
+model Competitor {
+  id              String    @id @default(cuid())
+  name            String
+  website         String
+  industry        String?
+  description     String?
+  
+  // Company Data
+  foundedYear     Int?
+  employeeCount   Int?
+  revenue         Float?
+  funding         Float?
+  fundingStage    String?
+  
+  // Online Presence
+  linkedinUrl     String?
+  twitterUrl      String?
+  facebookUrl     String?
+  
+  // Marketing Data
+  monthlyVisitors Int?
+  seoScore        Int?
+  contentScore    Int?
+  socialScore     Int?
+  
+  // Analysis
+  strengths       String[]  // Array of strengths
+  weaknesses      String[]  // Array of weaknesses
+  opportunities   String[]  // Array of opportunities
+  threats         String[]  // Array of threats
+  
+  // Tracking
+  lastAnalyzedAt  DateTime  @default(now())
+  monitoringEnabled Boolean @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([industry])
+  @@index([monitoringEnabled])
+}
+
+// Competitor Analysis History
+model CompetitorAnalysis {
+  id              String    @id @default(cuid())
+  competitorId    String
+  competitor      Competitor @relation(fields: [competitorId], references: [id])
+  
+  analysisType    AnalysisType
+  data            Json      // Flexible JSON for different analysis types
+  insights        String?
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([competitorId])
+  @@index([analysisType])
+}
+
+enum AnalysisType {
+  WEBSITE_TRAFFIC
+  SEO_ANALYSIS
+  CONTENT_ANALYSIS
+  SOCIAL_MEDIA
+  PRICING_ANALYSIS
+  PRODUCT_FEATURES
+  CUSTOMER_REVIEWS
+  MARKETING_CAMPAIGNS
+}
+
+// Industry Settings
+model Industry {
+  id              String    @id @default(cuid())
+  name            String    @unique
+  code            String    @unique
+  description     String?
+  targetMarket    String?
+  avgDealSize     Float?
+  avgSalesCycle   Int?     // in days
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Sales Targets
+model SalesTarget {
+  id              String    @id @default(cuid())
+  name            String
+  period          TargetPeriod
+  startDate       DateTime
+  endDate         DateTime
+  
+  targetRevenue   Float
+  targetLeads     Int
+  targetDeals     Int
+  
+  actualRevenue   Float     @default(0)
+  actualLeads     Int       @default(0)
+  actualDeals     Int       @default(0)
+  
+  progress        Float     @default(0) // percentage
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([period])
+}
+
+enum TargetPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+// Partnership Management
+model Partnership {
+  id              String    @id @default(cuid())
+  name            String
+  company         String
+  email           String
+  phone           String?
+  type            PartnershipType
+  status          PartnershipStatus @default(PENDING)
+  
+  commission      Float?    // commission percentage
+  description     String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([type])
+  @@index([status])
+}
+
+enum PartnershipType {
+  REFERRAL_PARTNER
+  AFFILIATE
+    JOINT_VENTURE
+  STRATEGIC_PARTNER
+}
+
+enum PartnershipStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  TERMINATED
+}
+
+// Booking/Meeting Management
+model Booking {
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  status          BookingStatus @default(SCHEDULED)
+  
+  leadId          String?
+  contactEmail    String?
+  contactName     String?
+  
+  meetingLink     String?
+  location        String?
+  notes           String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([startTime])
+  @@index([status])
+}
+
+enum BookingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// Message Management
+model Message {
+  id              String    @id @default(cuid())
+  subject         String?
+  body            String
+  fromEmail       String
+  toEmail         String
+  direction       MessageDirection
+  
+  status          MessageStatus @default(SENT)
+  sentAt          DateTime  @default(now())
+  openedAt        DateTime?
+  
+  leadId          String?
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([direction])
+  @@index([status])
+  @@index([sentAt])
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  DRAFT
+  SENT
+  DELIVERED
+  OPENED
+  REPLIED
+  BOUNCED
+  FAILED
+}

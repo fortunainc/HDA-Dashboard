@@ -1,0 +1,270 @@
+// Competitor Intelligence Operations
+// import { db } from '../db'
+// import disabled during development
+
+export interface CreateCompetitorInput {
+  name: string
+  website: string
+  industry?: string
+  description?: string
+}
+
+export interface CompetitorAnalysisData {
+  websiteTraffic?: {
+    monthlyVisitors: number
+    growthRate: number
+    topCountries: string[]
+  }
+  seoData?: {
+    organicKeywords: number
+    organicTraffic: number
+    paidKeywords: number
+    paidTraffic: number
+    backlinks: number
+    domainAuthority: number
+  }
+  contentAnalysis?: {
+    totalArticles: number
+    avgWordCount: number
+    publishingFrequency: string
+    topTopics: string[]
+  }
+  socialMedia?: {
+    followers: number
+    engagementRate: number
+    postingFrequency: string
+    platforms: string[]
+  }
+  pricing?: {
+    plans: Array<{
+      name: string
+      price: number
+      features: string[]
+    }>
+    positioning: string
+  }
+}
+
+export class CompetitorService {
+  // Create a new competitor
+  static async create(input: CreateCompetitorInput) {
+    try {
+      const competitor = await db.competitor.create({
+        data: input,
+      })
+      return { success: true, data: competitor }
+    } catch (error) {
+      console.error('Error creating competitor:', error)
+      return { success: false, error: 'Failed to create competitor' }
+    }
+  }
+
+  // Get all competitors
+  static async getAll(filters?: {
+    industry?: string
+    monitoringEnabled?: boolean
+    search?: string
+  }) {
+    try {
+      const { industry, monitoringEnabled, search } = filters || {}
+
+      const where: any = {}
+      if (industry) where.industry = industry
+      if (monitoringEnabled !== undefined) where.monitoringEnabled = monitoringEnabled
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { website: { contains: search, mode: 'insensitive' } },
+        ]
+      }
+
+      const competitors = await db.competitor.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+      })
+
+      return { success: true, data: competitors }
+    } catch (error) {
+      console.error('Error fetching competitors:', error)
+      return { success: false, error: 'Failed to fetch competitors' }
+    }
+  }
+
+  // Get competitor by ID with analysis
+  static async getById(id: string) {
+    try {
+      const competitor = await db.competitor.findUnique({
+        where: { id },
+        include: {
+          analyses: {
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+          },
+        },
+      })
+
+      if (!competitor) {
+        return { success: false, error: 'Competitor not found' }
+      }
+
+      return { success: true, data: competitor }
+    } catch (error) {
+      console.error('Error fetching competitor:', error)
+      return { success: false, error: 'Failed to fetch competitor' }
+    }
+  }
+
+  // Analyze competitor (this would integrate with external APIs)
+  static async analyzeCompetitor(id: string, analysisTypes: AnalysisType[]) {
+    try {
+      const competitor = await db.competitor.findUnique({
+        where: { id },
+      })
+
+      if (!competitor) {
+        return { success: false, error: 'Competitor not found' }
+      }
+
+      const analyses = []
+
+      for (const type of analysisTypes) {
+        let analysisData: CompetitorAnalysisData = {}
+
+        // In production, this would call external APIs like:
+        // - SimilarWeb for traffic data
+        // - Ahrefs/Semrush for SEO data
+        // - BuzzSumo for content analysis
+        // - Social Blade for social media data
+        
+        // For now, we'll create placeholder analysis records
+        switch (type) {
+          case AnalysisType.WEBSITE_TRAFFIC:
+            analysisData = {
+              websiteTraffic: {
+                monthlyVisitors: 0,
+                growthRate: 0,
+                topCountries: [],
+              },
+            }
+            break
+          case AnalysisType.SEO_ANALYSIS:
+            analysisData = {
+              seoData: {
+                organicKeywords: 0,
+                organicTraffic: 0,
+                paidKeywords: 0,
+                paidTraffic: 0,
+                backlinks: 0,
+                domainAuthority: 0,
+              },
+            }
+            break
+          case AnalysisType.CONTENT_ANALYSIS:
+            analysisData = {
+              contentAnalysis: {
+                totalArticles: 0,
+                avgWordCount: 0,
+                publishingFrequency: 'Unknown',
+                topTopics: [],
+              },
+            }
+            break
+          case AnalysisType.SOCIAL_MEDIA:
+            analysisData = {
+              socialMedia: {
+                followers: 0,
+                engagementRate: 0,
+                postingFrequency: 'Unknown',
+                platforms: [],
+              },
+            }
+            break
+          case AnalysisType.PRICING_ANALYSIS:
+            analysisData = {
+              pricing: {
+                plans: [],
+                positioning: 'Unknown',
+              },
+            }
+            break
+        }
+
+        const analysis = await db.competitorAnalysis.create({
+          data: {
+            competitorId: id,
+            analysisType: type,
+            data: analysisData as any,
+            insights: `Analysis completed for ${type}`,
+          },
+        })
+
+        analyses.push(analysis)
+      }
+
+      // Update last analyzed timestamp
+      await db.competitor.update({
+        where: { id },
+        data: { lastAnalyzedAt: new Date() },
+      })
+
+      return { success: true, data: analyses }
+    } catch (error) {
+      console.error('Error analyzing competitor:', error)
+      return { success: false, error: 'Failed to analyze competitor' }
+    }
+  }
+
+  // Get competitor comparison report
+  static async getComparisonReport(competitorIds: string[]) {
+    try {
+      const competitors = await db.competitor.findMany({
+        where: {
+          id: { in: competitorIds },
+        },
+        include: {
+          analyses: {
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          },
+        },
+      })
+
+      const comparison = competitors.map(competitor => ({
+        ...competitor,
+        latestAnalysis: competitor.analyses[0] || null,
+      }))
+
+      return { success: true, data: comparison }
+    } catch (error) {
+      console.error('Error generating comparison report:', error)
+      return { success: false, error: 'Failed to generate comparison' }
+    }
+  }
+
+  // Update competitor monitoring status
+  static async updateMonitoring(id: string, enabled: boolean) {
+    try {
+      await db.competitor.update({
+        where: { id },
+        data: { monitoringEnabled: enabled },
+      })
+      return { success: true, message: 'Monitoring status updated' }
+    } catch (error) {
+      console.error('Error updating monitoring:', error)
+      return { success: false, error: 'Failed to update monitoring' }
+    }
+  }
+
+  // Delete competitor
+  static async delete(id: string) {
+    try {
+      await db.competitor.delete({
+        where: { id },
+      })
+      return { success: true, message: 'Competitor deleted successfully' }
+    } catch (error) {
+      console.error('Error deleting competitor:', error)
+      return { success: false, error: 'Failed to delete competitor' }
+    }
+  }
+}
